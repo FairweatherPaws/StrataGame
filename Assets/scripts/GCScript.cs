@@ -791,7 +791,7 @@ public class GCScript : MonoBehaviour {
 					Script2.next = target;
 					
 					if (countise == 0) {
-						//spawnedRivers[countise].transform.Rotate(0,direction*60,0);
+						spawnedRivers[countise].transform.Rotate(0,0,direction*60-120);
 					}
 					if (oldDirection == -1) {
 						oldDirection = 5;
@@ -805,19 +805,19 @@ public class GCScript : MonoBehaviour {
 					if (oldDirection > direction && countise > 0) {
 						spawnedRivers[countise].renderer.material = riverBendLeft;
 						spawnedRivers[countise].GetComponent<RiverData>().type = "Bend Left";
-						//spawnedRivers[countise].transform.Rotate(0,240+direction*60,0);
+						spawnedRivers[countise].transform.Rotate(0,0,120+direction*60, Space.World);
 						
 					}
 					if (oldDirection < direction && countise > 0) {
 						spawnedRivers[countise].renderer.material = riverBendRight;
 						spawnedRivers[countise].GetComponent<RiverData>().type = "Bend Right";
-						//spawnedRivers[countise].transform.Rotate(0,120+direction*60,0);
+						spawnedRivers[countise].transform.Rotate(0,0,direction*60, Space.World);
 						
 					}
 					if (oldDirection == direction && countise > 0) {
 						spawnedRivers[countise].renderer.material = riverStraight;
 						spawnedRivers[countise].GetComponent<RiverData>().type = "Straight";
-						//spawnedRivers[countise].transform.Rotate(0,direction*60,0);
+						spawnedRivers[countise].transform.Rotate(0,0,60+direction*60, Space.World);
 					}
 					countise++;
 					if (moose[target, 3] < summa) {
@@ -846,11 +846,11 @@ public class GCScript : MonoBehaviour {
 								if (allRivers[p].GetComponent<RiverData>().type == "Straight") {
 									if (told == mnew + 1) {
 										allRivers[p].renderer.material = riverMergeRight;
-										//allRivers[p].transform.Rotate (0,180,0);
+										//allRivers[p].transform.Rotate (0,0,180, Space.World);
 									}
 									if (told == mnew + 5 || told == mnew - 1) {
 										allRivers[p].renderer.material = riverMergeLeft;
-										//allRivers[p].transform.Rotate (0,180,0);
+//										allRivers[p].transform.Rotate (0,0,180, Space.World);
 									}
 									
 									if (allRivers[p].GetComponent<RiverData>().incoming == 2) {
@@ -860,27 +860,27 @@ public class GCScript : MonoBehaviour {
 								if (allRivers[p].GetComponent<RiverData>().type == "Bend Right") {
 									if (told == mnew - 1) {
 										allRivers[p].renderer.material = riverMergeRight;
-										//allRivers[p].transform.Rotate (0,60,0);
-									}
-									if (told == mnew - 2) {
-										allRivers[p].renderer.material = riverMergeSides;
-									}
-									if (allRivers[p].GetComponent<RiverData>().incoming == 2) {
-										allRivers[p].renderer.material = riverMergeAll;
-										//allRivers[p].transform.Rotate (0,0,0);
-									}
-								}
-								if (allRivers[p].GetComponent<RiverData>().type == "Bend Left") {
-									if (told == mnew + 1) {
-										allRivers[p].renderer.material = riverMergeLeft;
-										//allRivers[p].transform.Rotate (0,300,0);
+										allRivers[p].transform.Rotate (0,0,60, Space.World);
 									}
 									if (told == mnew + 2) {
 										allRivers[p].renderer.material = riverMergeSides;
 									}
 									if (allRivers[p].GetComponent<RiverData>().incoming == 2) {
 										allRivers[p].renderer.material = riverMergeAll;
-										//allRivers[p].transform.Rotate (0,0,0);
+//										allRivers[p].transform.Rotate (0,0,0, Space.World);
+									}
+								}
+								if (allRivers[p].GetComponent<RiverData>().type == "Bend Left") {
+									if (told == mnew + 1 || told == mnew - 5) {
+										allRivers[p].renderer.material = riverMergeLeft;
+										allRivers[p].transform.Rotate (0,0,300, Space.World);
+									}
+									if (told == mnew + 2) {
+										allRivers[p].renderer.material = riverMergeSides;
+									}
+									if (allRivers[p].GetComponent<RiverData>().incoming == 2) {
+										allRivers[p].renderer.material = riverMergeAll;
+//										allRivers[p].transform.Rotate (0,0,0, Space.World);
 									}
 								}
 								
@@ -1051,27 +1051,37 @@ public class GCScript : MonoBehaviour {
 				house[i].GetComponent<HexData>().category = 4;
 			}
 		}
+		Material[] mmArr = {mmSea, mmArid, mmDesert, mmGrass, mmRocky, mmTundra, mmIce, mmLake};
 		for (int i = 0; i < area; i++) {
 			float add = 0f;
-			if (moose[i,1] % 2 == 1) { add += 0.57f;}
-			Transform minimap = Instantiate (hexplaneRiver, new Vector3(moose[i,1], moose[riverStart[i,2]*1.15f - add - 100, 0), Quaternion.identity) as Transform;
-			                                                                              minimap.localScale = new Vector3(1f,1.1f,1f);
-			                                                                              minimap.transform.Rotate(0,0,30);
-			                                                                              }
-			                                                                              }
-			                                                                              
-			                                                                              // Update is called once per frame
-			                                                                              void Update () {
-				
-			                                                                              }
-			                                                                              }
-			                                                                              
-			                                                                              // moose[tileid, x]
-			                                                                              // x = 0: tileid
-			                                                                              // x = 1: tile x-coord
-			                                                                              // x = 2: tile y-coord
-			                                                                              // x = 3: tile elevation
-			                                                                              // x = 4: tile terrain type {0: underWaterTile 0/3, 1: aridTile 2, 2: desertTile -3, 3: grassTile 5, 4: rockyTile -1, 5: tundraTile 1, 6: ICE --}
-			                                                                              // x = 5: tile fertility value
-			                                                                              // x = 6: has river?
-			                                                                              // x = 7: category {0: nothing 1: ICE 2:forest, 3:jungle, 4:savannah, 5: marsh, 6: wasteland
+			if (moose[i,1] % 2 == 1) { 
+				add += 0.57f;
+			}
+			Transform gotme = Instantiate (categoryPrefab, new Vector3(moose[i,1], moose[i,2]*1.15f - add - 100, Random.Range (-1000,1000)*0.01f), Quaternion.identity) as Transform;
+			                                                                         
+			gotme.localScale = new Vector3(1f,1.1f,1f);
+			gotme.transform.Rotate(0,0,30);
+			gotme.renderer.material = mmArr[moose[i,4]];
+			if (moose[i,4] == 0 && waterMoose[i,3] != 1) {
+				gotme.renderer.material = mmLake;
+			}
+
+		}
+
+	}
+
+	// Update is called once per frame
+	void Update () {
+
+	}
+}
+
+	// moose[tileid, x]
+	// x = 0: tileid
+	// x = 1: tile x-coord
+	// x = 2: tile y-coord
+	// x = 3: tile elevation
+	// x = 4: tile terrain type {0: underWaterTile 0/3, 1: aridTile 2, 2: desertTile -3, 3: grassTile 5, 4: rockyTile -1, 5: tundraTile 1, 6: ICE --}
+	// x = 5: tile fertility value
+	// x = 6: has river?
+	// x = 7: category {0: nothing 1: ICE 2:forest, 3:jungle, 4:savannah, 5: marsh, 6: wasteland

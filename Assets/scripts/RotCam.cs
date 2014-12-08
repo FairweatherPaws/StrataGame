@@ -12,6 +12,7 @@ public class RotCam : MonoBehaviour {
 	void Start () {
 		transform.position = new Vector3(steve.GetComponent<GCScript>().sizeX * multiplier + steve.GetComponent<GCScript>().sizeX / 2,0,20);
 		transform.parent = cameraFolder;
+		// 17, -15
 	}
 	
 	// Update is called once per frame
@@ -31,6 +32,7 @@ public class RotCam : MonoBehaviour {
 			Ytranslation = 0;
 			transform.position = new Vector3(transform.position.x, transform.position.y, 5);
 		}
+
 		if (transform.position.x > steve.GetComponent<GCScript>().sizeX * (multiplier + 1)) {
 			transform.position = new Vector3(transform.position.x - steve.GetComponent<GCScript>().sizeX, transform.position.y, transform.position.z);
 		}
