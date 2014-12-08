@@ -4,14 +4,15 @@ using System.Collections.Generic;
 
 
 public class GCScript : MonoBehaviour {
-
-	public Transform maaTilkku, miniHex, seaFolder, landFolder, hexplaneRiver, empty, categoryPrefab;
-	public Material groundBase, seaDefault, saltSea, underWaterTile, grassTile, tundraTile, aridTile, desertTile, rockyTile;
+	
+	public Transform maaTilkku, miniHex, seaFolder, landFolder, minimapFolder, hexplaneRiver, empty, categoryPrefab, waterfall;
+	public Material groundBase, seaDefault, saltSea, underWaterTile, grassTile, tundraTile, aridTile, desertTile, rockyTile, iceWall;
 	public Material riverSpawn, riverStraight, riverBendLeft, riverBendRight, riverPond, riverMergeLeft, riverMergeRight, riverMergeSides, riverMergeAll;
-	public Material forestMaterial, jungleMaterial, savannahMaterial;
-	public int sizeX = 30, sizeY = 20, iterations = 3, originalWeight = 6, seaLevel = 70, riverCount = 10;
+	public Material forestMaterial, jungleMaterial, savannahMaterial, marshMaterial, wastelandMaterial;
+	public Material mmSea, mmLake, mmIce, mmArid, mmDesert, mmGrass, mmRocky, mmTundra;
+	public int sizeX = 30, sizeY = 20, iterations = 3, originalWeight = 6, seaLevel = 70, riverCount = 10, mountainRangeCount = 5, mountainRangeLength = 20;
 	public float heightIncrement = 0.05f;
-
+	
 	// Use this for initialization
 	void Start () {
 		int[] miniMultiplier = {sizeX+1, sizeX-1, sizeX, 1, -1, -sizeX, -sizeX-1, -sizeX+1}; // array for scanning nearby hexes, 0-5 for even X coordinates, 2-7 for odd
@@ -62,14 +63,61 @@ public class GCScript : MonoBehaviour {
 			Script2.yLoc = moose[i,2];
 			Script2.elev = 0;
 		}
-
 		for (int i = 0; i < area; i++) { // elevation adjustments
 			int roll = Random.Range (-100,101);
 			moose[i,3] = roll;
 			if (moose[i,3] > 70) { moose[i,3] += 10; }
 			if (moose[i,3] > 100) { moose[i,3] = 100; }
 		}
-
+		for (int i = 0; i < mountainRangeCount; i++) {
+			int mountainRangeRoll = Random.Range (2 * area/16, 14*area / 16);
+			moose[mountainRangeRoll,3] = 100;
+			int bias = Random.Range(0,6);
+			int randomDirection = bias;
+			int rangeLength = Random.Range (mountainRangeLength / 2, mountainRangeLength * 3 / 2);
+			while (rangeLength > 0) {
+				if (moose[mountainRangeRoll,1] % 2 == 0) {
+					targetHex = hexSearchEven[randomDirection];
+					if (mountainRangeRoll+targetHex > 0 && mountainRangeRoll+targetHex < area) {
+						moose[mountainRangeRoll+targetHex,3] = 100;
+						randomDirection = Random.Range (-1,1) + bias;
+						
+						if (randomDirection < 0) {
+							randomDirection = 5; 
+						}
+						if (randomDirection > 5) {
+							randomDirection = 0;
+						}
+						mountainRangeRoll += targetHex;
+						rangeLength--;
+					}
+					else { 
+						randomDirection = Random.Range (0,6); 
+						continue; 
+					}
+				}
+				else {
+					targetHex = hexSearchOdd[randomDirection];
+					if (mountainRangeRoll+targetHex > 0 && mountainRangeRoll+targetHex < area) {
+						moose[mountainRangeRoll+targetHex,3] = 100;
+						randomDirection = Random.Range (-1,1) + bias;
+						if (randomDirection < 0) {
+							randomDirection = 5; 
+						}
+						if (randomDirection > 5) {
+							randomDirection = 0;
+						}
+						mountainRangeRoll += targetHex;
+						rangeLength--;
+					}
+					else { 
+						randomDirection = Random.Range (0,6); 
+						continue; 
+					}
+				}
+			}
+		}
+		
 		/*
 		while (ticker < 4) {
 			for (int i = 0; i < area; i++) {
@@ -171,16 +219,16 @@ public class GCScript : MonoBehaviour {
 		*/
 		for (int j = 0; j < iterations; j++) { // land height smoothing algorithm
 			for (int i = 0; i < area; i++) {
-
+				
 				int sum = moose[i,3]*originalWeight;
-
+				
 				if (moose[i,3] > 70) { // weight on mountains
 					sum += 150;
 				}
 				if (moose[i,3] < -70) { // weight on depths
 					sum -= 150;
 				}
-
+				
 				int duke = originalWeight;
 				for (int k = 0; k < 6; k++) {
 					if (moose[i,1] % 2 == 0) {
@@ -270,9 +318,9 @@ public class GCScript : MonoBehaviour {
 		}
 		int jokin = 0; // percent underwater
 		int summa = 0;
-
-
-
+		
+		
+		
 		for (int i = 0; i < area; i++) { // average height
 			summa += moose[i,3];
 		}
@@ -294,10 +342,10 @@ public class GCScript : MonoBehaviour {
 			if (jokin < seaLevel + 3 && jokin > seaLevel - 3) {
 				Debug.Log("Bye!");
 				break;
-
+				
 			}
 			Debug.Log("Running!");
-
+			
 		}
 		int waterTileCount = area;
 		for (int i = 0; i < area; i++) { // physical shift of water tiles
@@ -311,8 +359,8 @@ public class GCScript : MonoBehaviour {
 		}
 		int seaSize = 1;
 		int lakeRange = 18;
-
-
+		
+		
 		for (int i = 0; i < area; i++) { // checks to see if sea
 			if (ponds[i] != null) {
 				int surroundedByWater = 0;
@@ -377,7 +425,7 @@ public class GCScript : MonoBehaviour {
 					
 				}
 				*/
-
+				
 				if (surroundedByWater > lakeRange * 5 / 6) {
 					int whatWhat = Random.Range(0, 5);
 					if (whatWhat > 2) {waterMoose[i,3] = 1;}
@@ -465,7 +513,7 @@ public class GCScript : MonoBehaviour {
 				}
 			}
 		}
-
+		
 		for (int i = 0; i < area; i++) { // changes sea textures
 			if (ponds[i] != null) {
 				HexData Script1 = ponds[i].gameObject.GetComponent<HexData>();
@@ -476,10 +524,10 @@ public class GCScript : MonoBehaviour {
 			}
 		}
 		Debug.Log (summa); // sealevel value
-
+		
 		for (int i = 0; i < area; i++) { // next up, temperature bands and elevation effects
-
-			 // random allocation of base tiles everywhere
+			
+			// random allocation of base tiles everywhere
 			// 0 	-1, 
 			// 1 	 2, 
 			// 2 	-3, 
@@ -499,7 +547,7 @@ public class GCScript : MonoBehaviour {
 				moose[i,4] = 3; 
 				moose[i,5] = 10;
 			}
-
+			
 			if (moose[i,2] < sizeY * 2 / 16 || moose[i,2] > sizeY * 14 / 16) { // tundra near poles
 				moose[i,4] = 5;
 				moose[i,5] = 2;
@@ -541,7 +589,7 @@ public class GCScript : MonoBehaviour {
 								targetHex = miniMultiplier[k+2];
 								if (i+targetHex > 0 && i+targetHex < area) {
 									if (moose[i+targetHex,4] > 0 && moose[i+targetHex,3] < 46) { moose[i,4] = moose[i+targetHex,4];}
-
+									
 								}
 							}
 						}
@@ -551,15 +599,11 @@ public class GCScript : MonoBehaviour {
 				if (moose[i,3] < summa) { // underwater terrain
 					moose[i,4] = 0;
 					if (waterMoose[i,3] == 1) {	
-						moose[i,5] = -2; 
+						moose[i,5] = 0; 
 					}
 					else { 
-						moose[i,5] = 2; 
+						moose[i,5] = 6; 
 					}
-				}
-
-				if (moose[i,4] == 0) {
-					moose[i,5] = -2;
 				}
 				if (moose[i,4] == 1) {
 					moose[i,5] = 4;
@@ -576,8 +620,9 @@ public class GCScript : MonoBehaviour {
 				if (moose[i,4] == 5) {
 					moose[i,5] = 2;
 				}
-
+				
 				house[i].renderer.material = terrainTypes[moose[i,4]];
+				house[i].GetComponent<HexData>().terrainType = moose[i,4];
 			}
 		}
 		int[] fertilityArray = new int[area];
@@ -618,8 +663,8 @@ public class GCScript : MonoBehaviour {
 					lowestId = j;
 				}
 			}
-
-
+			
+			
 			if (moose[i,3] > riverStart[lowestId,1]) {
 				bool notThere = true;
 				for (int j = 0; j < 6; j++) {
@@ -651,8 +696,10 @@ public class GCScript : MonoBehaviour {
 		for (int i = 0; i < riverCount; i++) {
 			float add = 0f;
 			if (moose[riverStart[i,0],1] % 2 == 1) { add += 0.57f;}
-			Transform joki = Instantiate (hexplaneRiver, new Vector3(moose[riverStart[i,0],1], moose[riverStart[i,0],2]*1.15f - add, riverStart[i,1] * heightIncrement + 0.12f), Quaternion.identity) as Transform;
-			joki.transform.Rotate(0,270,270);
+			Transform joki = Instantiate (hexplaneRiver, new Vector3(moose[riverStart[i,0],1], moose[riverStart[i,0],2]*1.15f - add, riverStart[i,1] * heightIncrement + 0.15f), Quaternion.identity) as Transform;
+			joki.gameObject.AddComponent<RiverData>();
+			joki.localScale = new Vector3(1f,1.1f,1f);
+			joki.transform.Rotate(0,0,30);
 			riverTileCount++;
 			riverSpawns[i] = joki;
 			allRivers.Add (joki);
@@ -700,7 +747,7 @@ public class GCScript : MonoBehaviour {
 			int countise = 0;
 			int oldDirection = 0;
 			int direction = 0;
-
+			
 			while (running) {
 				int lowest = riverStart[i,1];
 				int target = riverStart[i,0];
@@ -734,14 +781,17 @@ public class GCScript : MonoBehaviour {
 					}
 				}
 				bool merge = false;
-
+				bool waterfall = false;
+				if (lowest + 15 < riverStart[i,1]) {
+					waterfall = true;
+				}
 				// Debug.Log("ID: " + target + " " + direction + " " + oldDirection);
 				if (target != riverStart[i,0]) {
 					RiverData Script2 = spawnedRivers[countise].GetComponent<RiverData>();
 					Script2.next = target;
-
+					
 					if (countise == 0) {
-						spawnedRivers[countise].transform.Rotate(0,direction*60,0);
+						//spawnedRivers[countise].transform.Rotate(0,direction*60,0);
 					}
 					if (oldDirection == -1) {
 						oldDirection = 5;
@@ -755,39 +805,39 @@ public class GCScript : MonoBehaviour {
 					if (oldDirection > direction && countise > 0) {
 						spawnedRivers[countise].renderer.material = riverBendLeft;
 						spawnedRivers[countise].GetComponent<RiverData>().type = "Bend Left";
-						spawnedRivers[countise].transform.Rotate(0,240+direction*60,0);
-
+						//spawnedRivers[countise].transform.Rotate(0,240+direction*60,0);
+						
 					}
 					if (oldDirection < direction && countise > 0) {
 						spawnedRivers[countise].renderer.material = riverBendRight;
 						spawnedRivers[countise].GetComponent<RiverData>().type = "Bend Right";
-						spawnedRivers[countise].transform.Rotate(0,120+direction*60,0);
-
+						//spawnedRivers[countise].transform.Rotate(0,120+direction*60,0);
+						
 					}
 					if (oldDirection == direction && countise > 0) {
 						spawnedRivers[countise].renderer.material = riverStraight;
 						spawnedRivers[countise].GetComponent<RiverData>().type = "Straight";
-						spawnedRivers[countise].transform.Rotate(0,direction*60,0);
+						//spawnedRivers[countise].transform.Rotate(0,direction*60,0);
 					}
 					countise++;
 					if (moose[target, 3] < summa) {
 						Script2.terminate = 2;
 						spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection;
-//						if (oldDirection < 3) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection + 3;}
-//						if (oldDirection > 2) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection - 3;}
+						//						if (oldDirection < 3) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection + 3;}
+						//						if (oldDirection > 2) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection - 3;}
 						spawnedRivers[countise-1].GetComponent<RiverData>().newDir = direction;
 						break;
 					}
 					if (moose[target, 6] == 1) {
 						Script2.terminate = 1;
 						spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection;
-//						if (oldDirection < 3) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection + 3;}
-//						if (oldDirection > 2) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection - 3;}
+						//						if (oldDirection < 3) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection + 3;}
+						//						if (oldDirection > 2) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection - 3;}
 						spawnedRivers[countise-1].GetComponent<RiverData>().newDir = direction;
 						merge = true;
-
+						
 					}
-
+					
 					if (merge) { 
 						for (int p = 0; p < allRivers.Count; p++) {
 							if (allRivers[p].GetComponent<RiverData>().id == target) {
@@ -796,12 +846,13 @@ public class GCScript : MonoBehaviour {
 								if (allRivers[p].GetComponent<RiverData>().type == "Straight") {
 									if (told == mnew + 1) {
 										allRivers[p].renderer.material = riverMergeRight;
-										allRivers[p].transform.Rotate (0,180,0);
+										//allRivers[p].transform.Rotate (0,180,0);
 									}
-									if (told == mnew - 1) {
+									if (told == mnew + 5 || told == mnew - 1) {
 										allRivers[p].renderer.material = riverMergeLeft;
-										allRivers[p].transform.Rotate (0,180,0);
+										//allRivers[p].transform.Rotate (0,180,0);
 									}
+									
 									if (allRivers[p].GetComponent<RiverData>().incoming == 2) {
 										allRivers[p].renderer.material = riverMergeAll;
 									}
@@ -809,40 +860,44 @@ public class GCScript : MonoBehaviour {
 								if (allRivers[p].GetComponent<RiverData>().type == "Bend Right") {
 									if (told == mnew - 1) {
 										allRivers[p].renderer.material = riverMergeRight;
-										allRivers[p].transform.Rotate (0,60,0);
+										//allRivers[p].transform.Rotate (0,60,0);
 									}
 									if (told == mnew - 2) {
 										allRivers[p].renderer.material = riverMergeSides;
 									}
 									if (allRivers[p].GetComponent<RiverData>().incoming == 2) {
 										allRivers[p].renderer.material = riverMergeAll;
-										allRivers[p].transform.Rotate (0,0,0);
+										//allRivers[p].transform.Rotate (0,0,0);
 									}
 								}
 								if (allRivers[p].GetComponent<RiverData>().type == "Bend Left") {
 									if (told == mnew + 1) {
 										allRivers[p].renderer.material = riverMergeLeft;
-										allRivers[p].transform.Rotate (0,300,0);
+										//allRivers[p].transform.Rotate (0,300,0);
 									}
 									if (told == mnew + 2) {
 										allRivers[p].renderer.material = riverMergeSides;
 									}
 									if (allRivers[p].GetComponent<RiverData>().incoming == 2) {
 										allRivers[p].renderer.material = riverMergeAll;
-										allRivers[p].transform.Rotate (0,0,0);
+										//allRivers[p].transform.Rotate (0,0,0);
 									}
 								}
-
+								
 								allRivers[p].GetComponent<RiverData>().incoming++;
 							}
 						}
 						break; 
 					}
 					float add = 0f;
-
+					
 					if (moose[target,1] % 2 == 1) { add += 0.57f; }
-					Transform joki = Instantiate (hexplaneRiver, new Vector3(moose[target,1], moose[target,2]*1.15f - add, lowest * heightIncrement + 0.12f), Quaternion.identity) as Transform;
-					joki.transform.Rotate(0,270,270);
+					Transform joki = Instantiate (hexplaneRiver, new Vector3(moose[target,1], moose[target,2]*1.15f - add, lowest * heightIncrement + 0.15f), Quaternion.identity) as Transform;
+					joki.gameObject.AddComponent<RiverData>();
+					//Transform vesiputous = Instantiate(empty, new Vector3((moose[target,1] + moose[riverStart[i,0],1])*0.5f, (moose[target,2] + moose[riverStart[i,0],2])*0.5f*1.15f - add*0.5f, riverStart[i,1] * heightIncrement + 0.12f), Quaternion.identity) as Transform;
+					joki.transform.Rotate(0,0,30);
+					//vesiputous.gameObject.GetComponent<ParticleSystem>().renderer.enabled = true;
+					joki.localScale = new Vector3(1f,1.1f,1f);
 					allRivers.Add (joki);
 					riverTileCount++;
 					RiverData Script1 = joki.GetComponent<RiverData>();
@@ -850,8 +905,8 @@ public class GCScript : MonoBehaviour {
 					Script1.id = target;
 					Script1.elev = lowest;
 					Script1.prev = riverStart[i,0];
-//					if (oldDirection < 3) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection + 3;}
-//					if (oldDirection > 2) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection - 3;}
+					//					if (oldDirection < 3) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection + 3;}
+					//					if (oldDirection > 2) { spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection - 3;}
 					spawnedRivers[countise-1].GetComponent<RiverData>().oldDir = oldDirection;
 					spawnedRivers[countise-1].GetComponent<RiverData>().newDir = direction;
 					joki.parent = River;
@@ -859,39 +914,102 @@ public class GCScript : MonoBehaviour {
 					moose[target,6] = 1;
 					riverStart[i,0] = target;
 					riverStart[i,1] = lowest;
-
-
+					
+					
 				}
 				else {
 					spawnedRivers[countise].renderer.material = riverPond;
 					spawnedRivers[countise].GetComponent<RiverData>().type = "End Pond";
 					spawnedRivers[countise].GetComponent<RiverData>().terminate = 3;
 					spawnedRivers[countise].GetComponent<RiverData>().oldDir = oldDirection;
-//					if (oldDirection < 3) { spawnedRivers[countise].GetComponent<RiverData>().oldDir = oldDirection + 3;}
-//					if (oldDirection > 2) { spawnedRivers[countise].GetComponent<RiverData>().oldDir = oldDirection - 3;}
-					spawnedRivers[countise].transform.Rotate(0,180 + oldDirection*60,0);
+					//					if (oldDirection < 3) { spawnedRivers[countise].GetComponent<RiverData>().oldDir = oldDirection + 3;}
+					//					if (oldDirection > 2) { spawnedRivers[countise].GetComponent<RiverData>().oldDir = oldDirection - 3;}
+					//spawnedRivers[countise].transform.Rotate(0,180 + oldDirection*60,0);
 					running = false;
 				}
 			}
 			spawnedRivers[0].GetComponent<RiverData>().oldDir = 0;
 		}
+		
 		List<Transform> allForests = new List<Transform>();
 		Transform forestFolder = Instantiate (empty, new Vector3(0,0,0), Quaternion.identity) as Transform;
 		forestFolder.name = "forestFolder";
-
+		
 		List<Transform> allJungles = new List<Transform>();
 		Transform jungleFolder = Instantiate (empty, new Vector3(0,0,0), Quaternion.identity) as Transform;
 		jungleFolder.name = "jungleFolder";
-
+		
 		List<Transform> allSavannahs = new List<Transform>();
 		Transform savannahFolder = Instantiate (empty, new Vector3(0,0,0), Quaternion.identity) as Transform;
 		savannahFolder.name = "savannahFolder";
-
+		
+		List<Transform> allIce = new List<Transform>();
+		Transform iceFolder = Instantiate (empty, new Vector3(0,0,0), Quaternion.identity) as Transform;
+		iceFolder.name = "iceFolder";
+		
+		List<Transform> allMarshes = new List<Transform>();
+		Transform marshFolder = Instantiate (empty, new Vector3(0,0,0), Quaternion.identity) as Transform;
+		marshFolder.name = "marshFolder";
+		
+		List<Transform> allWastelands = new List<Transform>();
+		Transform wastelandFolder = Instantiate (empty, new Vector3(0,0,0), Quaternion.identity) as Transform;
+		wastelandFolder.name = "wastelandFolder";
+		
+		foreach (Transform riverTile in allRivers) {
+			if (riverTile.gameObject.GetComponent<RiverData>().type == "End Pond") {
+				int roller = Random.Range (0, 20);
+				int i = riverTile.gameObject.GetComponent<RiverData>().id;
+				if (roller < 4 && moose[i,2] < sizeY * 13 / 16 && moose[i,2] > sizeY * 3 / 16) {
+					moose[i, 7] = 5;
+					moose[i, 5] -= 20;
+					house[i].gameObject.GetComponent<HexData>().fertility -= 20;
+					house[i].gameObject.GetComponent<HexData>().category = 5;
+					float add = 0f;
+					if (moose[i,1] % 2 == 1) { add += 0.57f; }
+					Transform suo = Instantiate (categoryPrefab, new Vector3(moose[i,1], moose[i,2]*1.15f - add, moose[i,3] * heightIncrement + 0.19f), Quaternion.identity) as Transform;
+					suo.renderer.material = marshMaterial;
+					suo.transform.Rotate(0,0,Random.Range (0, 360));
+					suo.parent = marshFolder;
+					suo.name = "marsh tile";
+					allMarshes.Add(suo);
+				}
+			}
+		}
+		
 		for (int i = 0; i < area; i++) {
 			if (moose[i,6] == 1) {
 				house[i].GetComponent<HexData>().fertility += 20;
+				moose[i,5] += 20;
+				house[i].GetComponent<HexData>().hasRiver = 1;
 			}
-			if (moose[i,5] > 40 && moose[i,4] == 3) {
+			if (moose[i,2] > sizeY * 15 / 16 || moose[i,2] < sizeY / 16 + 2) {
+				if (moose[i,3] < 40) {
+					moose[i,3] = 40;
+					moose[i,4] = 6;
+					moose[i,7] = 1;
+					house[i].transform.position += new Vector3(0, 0, (40 - house[i].GetComponent<HexData>().elev) * heightIncrement);
+					house[i].GetComponent<HexData>().elev = 40;
+					house[i].GetComponent<HexData>().category = 1;
+					house[i].renderer.material = iceWall;
+					allIce.Add(house[i]);
+				}
+			}
+			if (3 > Random.Range (0,100) && moose[i,4] != 4 && moose[i,4] != 2 && moose[i,7] == 0 && moose[i,4] != 0) {
+				moose[i,7] = 6;
+				house[i].GetComponent<HexData>().category = 6;
+				moose[i,5] -= 40;
+				house[i].GetComponent<HexData>().fertility -= 40;
+				float add = 0f;
+				if (moose[i,1] % 2 == 1) { add += 0.57f; }
+				Transform joutomaa = Instantiate (categoryPrefab, new Vector3(moose[i,1], moose[i,2]*1.15f - add, moose[i,3] * heightIncrement + 0.19f), Quaternion.identity) as Transform;
+				joutomaa.renderer.material = wastelandMaterial;
+				joutomaa.transform.Rotate(0,0,Random.Range (0, 360));
+				joutomaa.parent = wastelandFolder;
+				joutomaa.name = "wasteland tile";
+				allWastelands.Add(joutomaa);
+			}
+			
+			if (moose[i,5] > 40 && moose[i,4] == 3 && moose[i,7] == 0) {
 				if (moose[i,2] > sizeY * 6 / 16 && moose[i,2] < sizeY * 10 / 16) {
 					float add = 0f;
 					if (moose[i,1] % 2 == 1) { add += 0.57f; }
@@ -901,8 +1019,9 @@ public class GCScript : MonoBehaviour {
 					viidakko.parent = jungleFolder;
 					viidakko.name = "jungle tile";
 					allJungles.Add(viidakko);
-					moose[i,7] = 1;
+					moose[i,7] = 3;
 					house[i].GetComponent<HexData>().fertility += 20;
+					house[i].GetComponent<HexData>().category = 3;
 				}
 				else {
 					float add = 0f;
@@ -913,11 +1032,12 @@ public class GCScript : MonoBehaviour {
 					metsä.parent = forestFolder;
 					metsä.name = "forest tile";
 					allForests.Add(metsä);
-					moose[i,7] = 0;
+					moose[i,7] = 2;
 					house[i].GetComponent<HexData>().fertility += 10;
+					house[i].GetComponent<HexData>().category = 2;
 				}
 			}
-			if (moose[i,5] > 20 && moose[i,4] == 1) {
+			if (moose[i,5] > 20 && moose[i,4] == 1 && moose[i,7] == 0) {
 				float add = 0f;
 				if (moose[i,1] % 2 == 1) { add += 0.57f; }
 				Transform savanni = Instantiate (categoryPrefab, new Vector3(moose[i,1], moose[i,2]*1.15f - add, moose[i,3] * heightIncrement + 0.19f), Quaternion.identity) as Transform;
@@ -926,24 +1046,32 @@ public class GCScript : MonoBehaviour {
 				savanni.parent = savannahFolder;
 				savanni.name = "savannah tile";
 				allSavannahs.Add(savanni);
-				moose[i,7] = 2;
+				moose[i,7] = 4;
 				house[i].GetComponent<HexData>().fertility += 10;
+				house[i].GetComponent<HexData>().category = 4;
 			}
 		}
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
-}
-
-// moose[tileid, x]
-// x = 0: tileid
-// x = 1: tile x-coord
-// x = 2: tile y-coord
-// x = 3: tile elevation
-// x = 4: tile terrain type {underWaterTile -1, aridTile 2, desertTile -1, grassTile 5, rockyTile -1, tundraTile 1}
-// x = 5: tile fertility value
-// x = 6: has river?
-// x = 7: category {0:forest, 1:jungle, 2:savannah, 3: 
+		for (int i = 0; i < area; i++) {
+			float add = 0f;
+			if (moose[i,1] % 2 == 1) { add += 0.57f;}
+			Transform minimap = Instantiate (hexplaneRiver, new Vector3(moose[i,1], moose[riverStart[i,2]*1.15f - add - 100, 0), Quaternion.identity) as Transform;
+			                                                                              minimap.localScale = new Vector3(1f,1.1f,1f);
+			                                                                              minimap.transform.Rotate(0,0,30);
+			                                                                              }
+			                                                                              }
+			                                                                              
+			                                                                              // Update is called once per frame
+			                                                                              void Update () {
+				
+			                                                                              }
+			                                                                              }
+			                                                                              
+			                                                                              // moose[tileid, x]
+			                                                                              // x = 0: tileid
+			                                                                              // x = 1: tile x-coord
+			                                                                              // x = 2: tile y-coord
+			                                                                              // x = 3: tile elevation
+			                                                                              // x = 4: tile terrain type {0: underWaterTile 0/3, 1: aridTile 2, 2: desertTile -3, 3: grassTile 5, 4: rockyTile -1, 5: tundraTile 1, 6: ICE --}
+			                                                                              // x = 5: tile fertility value
+			                                                                              // x = 6: has river?
+			                                                                              // x = 7: category {0: nothing 1: ICE 2:forest, 3:jungle, 4:savannah, 5: marsh, 6: wasteland

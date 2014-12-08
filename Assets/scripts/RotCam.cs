@@ -4,42 +4,42 @@ using System.Collections;
 public class RotCam : MonoBehaviour {
 	
 	private float speed = 4f;
-	private float rspeed = 4f;
-	private int toggle = 0;
-	private bool switcher = false;
-	
+	public int multiplier;
+	public Transform cameraFolder;
+	public GameObject steve;
+
 	// Use this for initialization
 	void Start () {
-		
+		transform.position = new Vector3(steve.GetComponent<GCScript>().sizeX * multiplier + steve.GetComponent<GCScript>().sizeX / 2,0,20);
+		transform.parent = cameraFolder;
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		if (Input.GetButtonDown ("Fire1")) {
-			
-			if (toggle == 0) {speed = 10f; toggle = 1; goto endloop;}
-			if (toggle == 1) {speed = 20f; toggle = 2; goto endloop;}
-			if (toggle == 2) {speed = 40f; toggle = 3; goto endloop;}
-			if (toggle == 3) {speed = 4f; toggle = 0; goto endloop;}
-			
-		}
-	endloop:
 
-		float Yrotation = Input.GetAxis("Mouse Y") * rspeed * 15;
-		float Xrotation = Input.GetAxis("Mouse X") * rspeed * 15;
-		float Zrotation = Input.GetAxis("Rotate Sideways") * rspeed * 3;
 		float Xtranslation = Input.GetAxis ("Horizontal") * speed * 2;
 		float Ztranslation = Input.GetAxis ("Vertical") * speed * 2;
-		float Ytranslation = Input.GetAxis ("Up Shift") * speed * 2;
+		float Ytranslation = Input.GetAxis ("Mouse ScrollWheel") * speed * 2;
 		Xtranslation *= Time.deltaTime;
 		Ytranslation *= Time.deltaTime;
 		Ztranslation *= Time.deltaTime;
-		Yrotation *= Time.deltaTime;
-		Xrotation *= Time.deltaTime;
-		Zrotation *= Time.deltaTime;
-		
-		transform.Rotate(-Yrotation, Xrotation, -Zrotation);
-		transform.Translate(Xtranslation, Ytranslation, Ztranslation);
+		if (transform.position.z > 10 && Ytranslation < 0) {
+			Ytranslation = 0;
+			transform.position = new Vector3(transform.position.x, transform.position.y, 10);
+		}
+		if (transform.position.z < 5 && Ytranslation > 0) {
+			Ytranslation = 0;
+			transform.position = new Vector3(transform.position.x, transform.position.y, 5);
+		}
+		if (transform.position.x > steve.GetComponent<GCScript>().sizeX * (multiplier + 1)) {
+			transform.position = new Vector3(transform.position.x - steve.GetComponent<GCScript>().sizeX, transform.position.y, transform.position.z);
+		}
+		if (transform.position.x < steve.GetComponent<GCScript>().sizeX * multiplier) {
+			transform.position = new Vector3(transform.position.x + steve.GetComponent<GCScript>().sizeX, transform.position.y, transform.position.z);
+		}
+
+		transform.Translate(-Xtranslation, Ztranslation, 0, Space.World);
+		transform.Translate(0,0,Ytranslation);
 
 	}
 }
