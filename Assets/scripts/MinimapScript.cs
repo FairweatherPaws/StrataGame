@@ -8,7 +8,7 @@ public class MinimapScript : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		camera.orthographicSize = steve.GetComponent<GCScript>().sizeX/3;
-		transform.position = new Vector3(steve.GetComponent<GCScript>().sizeX, -100 + steve.GetComponent<GCScript>().sizeY / 2, 32);
+		transform.position = new Vector3(steve.GetComponent<GCScript>().sizeX / 2, -1000 + steve.GetComponent<GCScript>().sizeY / 2, 32);
 	}
 	
 	// Update is called once per frame

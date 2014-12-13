@@ -9,7 +9,7 @@ public class SunScript : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		if (narm) {transform.Translate(steve.GetComponent<GCScript>().sizeX,0,0);}
-		transform.Translate(0,steve.GetComponent<GCScript>().sizeY/2,-steve.GetComponent<GCScript>().sizeX/2);
+		transform.Translate(steve.GetComponent<GCScript>().sizeX/2,-steve.GetComponent<GCScript>().sizeY/2,-40);
 		light.intensity = steve.GetComponent<GCScript>().sizeX/60f;
 	}
 
