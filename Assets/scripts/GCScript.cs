@@ -10,7 +10,7 @@ public class GCScript : MonoBehaviour {
 	public Material riverSpawn, riverStraight, riverBendLeft, riverBendRight, riverPond, riverMergeLeft, riverMergeRight, riverMergeSides, riverMergeAll;
 	public Material forestMaterial, jungleMaterial, savannahMaterial, marshMaterial, wastelandMaterial;
 	public Material mmSea, mmLake, mmIce, mmArid, mmDesert, mmGrass, mmRocky, mmTundra;
-	public int sizeX = 30, sizeY = 20, iterations = 3, originalWeight = 6, seaLevel = 70, riverCount = 10, mountainRangeCount = 5, mountainRangeLength = 20;
+	public int sizeX = 30, sizeY = 20, iterations = 3, originalWeight = 6, seaLevel = 70, riverCount = 10, mountainRangeCount = 5, mountainRangeLength = 20, waterlevel = 0;
 	public float heightIncrement = 0.05f;
 	public List<Transform> allObjects = new List<Transform>();
 	public bool runGenerate = true, landGen = true, mountainGen = false, landSmooth = false, seaGen = false, seaSpread = false, terrainGen = false, riverGen = false, catGen = false, minimapGen = false, spawnGen = false;
@@ -84,7 +84,7 @@ public class GCScript : MonoBehaviour {
 			 // land tile data array
 			int[,] waterMoose = new int[area,4]; // water tile data array
 			int jokin = 0; // percent underwater
-			int waterlevel = 0;
+
 			int seaSize = 1;
 			int lakeRange = 18;
 			int[] fertilityArray = new int[area];
@@ -666,6 +666,9 @@ public class GCScript : MonoBehaviour {
 		}
 		if (spawnGen) {
 //		if (Input.GetAxis ("Horizontal") != 0 || Input.GetAxis ("Vertical") != 0) {
+			Material[] terrainTypes = {saltSea, aridTile, desertTile, grassTile, rockyTile, tundraTile, iceWall, seaDefault};
+			Material[] riverTypes = {null, riverSpawn, riverStraight, riverBendLeft, riverBendRight, riverMergeLeft, riverMergeRight, riverMergeSides, riverMergeAll, riverPond};
+			Material[] catTypes = {forestMaterial, jungleMaterial, savannahMaterial, marshMaterial, wastelandMaterial};
 			for ( int i = 0; i < sizeX*sizeY; i++) {
 				float aox = moose[i,xCoord];
 				float aoy = moose[i,yCoord];
@@ -680,8 +683,26 @@ public class GCScript : MonoBehaviour {
 				    aox + 15 > crx && aox - 15 < crx && aoy + 15 > cry && aoy - 15 < cry) {
 					if (moose[i,exists] == 0) {
 						float add = 0f;
-						if (moose[i,1] % 2 == 1) { add += 0.57f; }
-						Transform hex = Instantiate(tallHex, new Vector3(aox, aoy*1.15f - add, 0), Quaternion.identity) as Transform;
+						if (moose[i,xCoord] % 2 == 1) { add += 0.57f; }
+						Transform hex = Instantiate(tallHex, new Vector3(aox, aoy*1.15f - add, moose[i,elevation]*heightIncrement), Quaternion.identity) as Transform;
+						if (moose[i,waterType] > 0) {
+							hex.transform.position = new Vector3(hex.transform.position.x, hex.transform.position.y, waterlevel * heightIncrement);
+							if (moose[i,waterType] == 2) {
+								hex.renderer.material = terrainTypes[7];
+							}
+							else {
+								hex.renderer.material = terrainTypes[0];
+							}
+						}
+						else {
+							hex.renderer.material = terrainTypes[moose[i,terrainType]];
+						}
+						if (moose[i,riverType] > 0) {
+							Transform riverHex = Instantiate(categoryPrefab, new Vector3(aox, aoy*1.15f - add, moose[i,elevation]*heightIncrement + 3.4f), Quaternion.identity) as Transform;
+							riverHex.renderer.material = riverTypes[moose[i,riverType]];
+							riverHex.transform.parent = hex;
+							riverHex.transform.Rotate (0,0,-120 + 60*moose[i,riverDirection]);
+						}
 						hex.transform.Rotate(0,0,30);
 						allObjects.Add (hex);
 						hex.gameObject.AddComponent<HexData>();
@@ -695,7 +716,10 @@ public class GCScript : MonoBehaviour {
 		if (Input.GetAxis ("Horizontal") != 0 || Input.GetAxis ("Vertical") != 0) {
 			movementTicker += Time.deltaTime;
 		}
-		if (movementTicker > 0.4f) {
+		if (movementTicker > 0.2f) {
+			Material[] terrainTypes = {saltSea, aridTile, desertTile, grassTile, rockyTile, tundraTile, iceWall, seaDefault};
+			Material[] riverTypes = {null, riverSpawn, riverStraight, riverBendLeft, riverBendRight, riverMergeLeft, riverMergeRight, riverMergeSides, riverMergeAll, riverPond};
+			Material[] catTypes = {forestMaterial, jungleMaterial, savannahMaterial, marshMaterial, wastelandMaterial};
 			float ctx = cameraTarget.transform.position.x;
 			float cty = cameraTarget.transform.position.y;
 			float clx = cameraTLeft.transform.position.x;
@@ -726,7 +750,25 @@ public class GCScript : MonoBehaviour {
 					if (moose[i,exists] == 0) {
 						float add = 0f;
 						if (moose[i,1] % 2 == 1) { add += 0.57f; }
-						Transform hex = Instantiate(tallHex, new Vector3(aox, aoy*1.15f - add, 0), Quaternion.identity) as Transform;
+						Transform hex = Instantiate(tallHex, new Vector3(aox, aoy*1.15f - add, moose[i,elevation]*heightIncrement), Quaternion.identity) as Transform;
+						if (moose[i,waterType] > 0) {
+							hex.transform.position = new Vector3(hex.transform.position.x, hex.transform.position.y, waterlevel * heightIncrement);
+							if (moose[i,waterType] == 2) {
+								hex.renderer.material = terrainTypes[7];
+							}
+							else {
+								hex.renderer.material = terrainTypes[0];
+							}
+						}
+						else {
+							hex.renderer.material = terrainTypes[moose[i,terrainType]];
+						}
+						if (moose[i,riverType] > 0) {
+							Transform riverHex = Instantiate(categoryPrefab, new Vector3(aox, aoy*1.15f - add, moose[i,elevation]*heightIncrement + 3.4f), Quaternion.identity) as Transform;
+							riverHex.renderer.material = riverTypes[moose[i,riverType]];
+							riverHex.transform.parent = hex;
+							riverHex.transform.Rotate (0,0,-120 + 60*moose[i,riverDirection]);
+						}
 						hex.transform.Rotate(0,0,30);
 						allObjects.Add (hex);
 						hex.gameObject.AddComponent<HexData>();
