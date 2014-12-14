@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -178,11 +178,11 @@ public class GCScript : MonoBehaviour {
 						
 						int sum = moose[i,elevation]*originalWeight;
 						
-						if (moose[i, elevation] > 70) { // weight on mountains
-							sum += 150;
+						if (moose[i, elevation] > 50) { // weight on mountains
+							sum += originalWeight*5;
 						}
-						if (moose[i, elevation] < -70) { // weight on depths
-							sum -= 150;
+						if (moose[i, elevation] < -50) { // weight on depths
+							sum -= originalWeight*5;
 						}
 
 						for (int k = 0; k < 6; k++) {
@@ -407,170 +407,342 @@ public class GCScript : MonoBehaviour {
 				}
 			}
 
-			if (riverGen) {
-				for (int i = 0; i < area; i++) {
-					int lowest = riverStart[0,1];
-					int lowestId = 0;
-					int lowestNum = riverStart[0,0];
-		
-					if (moose[i,elevation] > riverStart[lowestId,1]) {
-						bool notThere = true;
-						for (int j = 0; j < 6; j++) {
-							for (int k = 0; k < riverCount; k++) {
-								if (moose[i,xCoord] % 2 == 0) {
-									targetHex = hexSearchEven[j];
-									if (i+targetHex > 0 && i+targetHex < area) {
-										if (riverStart[k,0] == i+targetHex) { 
-											notThere = false;
+			if (riverGen) { 
+				int riverNumber = 0;
+				int[] riverSpawner = new int[riverCount];
+				for (int i = 100; i > -100; i--) {
+					int riverTicker = 0;
+					for (int j = 0; j < area; j++) {
+						bool occupado = false;
+						if (moose[j,elevation] > i  && moose[j,yCoord] < sizeY * 15 / 16 && moose[j,yCoord] > sizeY / 16) {
+							for (int k = 0; k < 6; k++) {
+								if (moose[j,xCoord] % 2 == 0) {
+									targetHex = hexSearchEven[k];
+									if (j+targetHex > 0 && j+targetHex < area) {
+										if (moose[j+targetHex,riverType] == 1) { 
+											occupado = true;
 										}
 									}
-								}
+								} 
 								else {
-									targetHex = hexSearchOdd[j];
-									if (i+targetHex > 0 && i+targetHex < area) {
-										if (riverStart[k,0] == i+targetHex) { 
-											notThere = false;
+									targetHex = hexSearchOdd[k];
+									if (j+targetHex > 0 && j+targetHex < area) {
+										if (moose[j+targetHex,riverType] == 1) { 
+											occupado = true;
 										}
 									}
 								}
 							}
-						}
-						if (notThere) {
-							riverStart[lowestId, 0] = i;
-							riverStart[lowestId, 1] = moose[i,elevation];
+							if (riverTicker < riverCount && !occupado) {
+								riverSpawner[riverTicker] = j;
+								moose[j,riverType] = 1;
+								riverTicker++;
+							}
+							else {
+								moose[j,riverType] = 0;
+							}
 						}
 					}
+					if (riverTicker >= riverCount) {
+						break;
+					}
 				}
-
 				for (int i = 0; i < riverCount; i++) {
-					int direction = 0;
-					int lowest = riverStart[i,1];
-					int target = riverStart[i,0];
-					int current = riverStart[i,0];
-					moose[current,riverType] = 1;
-					for (int j = 0; j < 6; j++) {
-						if (moose[target,xCoord] % 2 == 0) {
-							targetHex = hexSearchEven[j];
-							if (target+targetHex > 0 && target+targetHex < area) {
-								if (moose[target+targetHex,3] < lowest) { 
-									lowest = moose[target+targetHex,elevation];
-									target = moose[target+targetHex,idNum];
-									direction = j;
+					Debug.Log (riverSpawner[i]);
+					int oldDirection = -1;
+					int direction = -1;
+					while (true) {
+						oldDirection = direction;
+						direction = -1;
+						int lowest = moose[riverSpawner[i],elevation];
+						for (int j = 0; j < 6; j++) {
+							if (moose[riverSpawner[i],xCoord] % 2 == 0) {
+								targetHex = hexSearchEven[j];
+								if (riverSpawner[i]+targetHex > 0 && riverSpawner[i]+targetHex < area) {
+									if (moose[riverSpawner[i]+targetHex,elevation] < lowest) { 
+										direction = j;
+										lowest = moose[riverSpawner[i]+targetHex,elevation];
+									}
 								}
+							} 
+							else {
+								targetHex = hexSearchOdd[j];
+								if (riverSpawner[i]+targetHex > 0 && riverSpawner[i]+targetHex < area) {
+									if (moose[riverSpawner[i]+targetHex,elevation] < lowest) { 
+										direction = j;
+										lowest = moose[riverSpawner[i]+targetHex,elevation];
+									}
+								}
+							}
+						}
+						// x = 6: river type: 0: no river, 1: start 2: straight river, 3: bendLeft, 4: bendRight, 
+						// 5: bendLeft+straight, 6: bendRight+straight, 7: bendLeft+bendRight, 8: triple, 9: end pond;
+						if (direction > -1) {
+							moose[riverSpawner[i],riverDirection] = direction;
+							if (moose[riverSpawner[i],xCoord] % 2 == 0) {
+								if (moose[riverSpawner[i],riverType] != 1) {
+									if ((oldDirection == direction - 1) || (oldDirection == direction + 5)) {
+										if (moose[riverSpawner[i],riverType] == 0) {
+											moose[riverSpawner[i],riverType] = 4;
+										}
+										if (moose[riverSpawner[i],riverType] == 2) {
+											moose[riverSpawner[i],riverType] = 6;
+										}
+										if (moose[riverSpawner[i],riverType] == 3) {
+											moose[riverSpawner[i],riverType] = 7;
+										}
+										if (moose[riverSpawner[i],riverType] == 5) {
+											moose[riverSpawner[i],riverType] = 8;
+										}
+									}
+									if ((oldDirection == direction + 1) || (oldDirection == direction - 5)) {
+										if (moose[riverSpawner[i],riverType] == 0) {
+											moose[riverSpawner[i],riverType] = 3;
+										}
+										if (moose[riverSpawner[i],riverType] == 2) {
+											moose[riverSpawner[i],riverType] = 5;
+										}
+										if (moose[riverSpawner[i],riverType] == 4) {
+											moose[riverSpawner[i],riverType] = 7;
+										}
+										if (moose[riverSpawner[i],riverType] == 6) {
+											moose[riverSpawner[i],riverType] = 8;
+										}
+									}
+									if (oldDirection == direction) {
+										if (moose[riverSpawner[i],riverType] == 0) {
+											moose[riverSpawner[i],riverType] = 2;
+										}
+										if (moose[riverSpawner[i],riverType] == 3) {
+											moose[riverSpawner[i],riverType] = 5;
+										}
+										if (moose[riverSpawner[i],riverType] == 4) {
+											moose[riverSpawner[i],riverType] = 6;
+										}
+										if (moose[riverSpawner[i],riverType] == 7) {
+											moose[riverSpawner[i],riverType] = 8;
+										}
+									}
+								}
+								riverSpawner[i] = riverSpawner[i]+hexSearchEven[direction];
+							} 
+							else {
+								if (moose[riverSpawner[i],riverType] != 1) {
+									if ((oldDirection == direction - 1) || (oldDirection == direction + 5)) {
+										if (moose[riverSpawner[i],riverType] == 0) {
+											moose[riverSpawner[i],riverType] = 4;
+										}
+										if (moose[riverSpawner[i],riverType] == 2) {
+											moose[riverSpawner[i],riverType] = 6;
+										}
+										if (moose[riverSpawner[i],riverType] == 3) {
+											moose[riverSpawner[i],riverType] = 7;
+										}
+										if (moose[riverSpawner[i],riverType] == 5) {
+											moose[riverSpawner[i],riverType] = 8;
+										}
+									}
+									if ((oldDirection == direction + 1) || (oldDirection == direction - 5)) {
+										if (moose[riverSpawner[i],riverType] == 0) {
+											moose[riverSpawner[i],riverType] = 3;
+										}
+										if (moose[riverSpawner[i],riverType] == 2) {
+											moose[riverSpawner[i],riverType] = 5;
+										}
+										if (moose[riverSpawner[i],riverType] == 4) {
+											moose[riverSpawner[i],riverType] = 7;
+										}
+										if (moose[riverSpawner[i],riverType] == 6) {
+											moose[riverSpawner[i],riverType] = 8;
+										}
+									}
+									if (oldDirection == direction) {
+										if (moose[riverSpawner[i],riverType] == 0) {
+											moose[riverSpawner[i],riverType] = 2;
+										}
+										if (moose[riverSpawner[i],riverType] == 3) {
+											moose[riverSpawner[i],riverType] = 5;
+										}
+										if (moose[riverSpawner[i],riverType] == 4) {
+											moose[riverSpawner[i],riverType] = 6;
+										}
+										if (moose[riverSpawner[i],riverType] == 7) {
+											moose[riverSpawner[i],riverType] = 8;
+										}
+									}
+								}
+								riverSpawner[i] = riverSpawner[i]+hexSearchOdd[direction];
 							}
 						}
 						else {
-							targetHex = hexSearchOdd[j];
-							if (target+targetHex > 0 && target+targetHex < area) {
-								if (moose[target+targetHex,3] < lowest) { 
-									lowest = moose[target+targetHex,elevation];
-									target = moose[target+targetHex,idNum];
-									direction = j;
-								}
-							}
-						}
-					}
-					moose[current,riverDirection] = direction;
-				}
-
-				for (int i = 0; i < riverCount; i++) {
-					bool running = true;
-					int countise = 0;
-					int direction = 0;
-					int oldDirection = 0;
-					int lowest = riverStart[i,1];
-					int target = riverStart[i,0];
-					while (running) {
-						int current = target;
-						oldDirection = direction;
-						direction = -1;
-						for (int j = 0; j < 6; j++) {
-							if (moose[current,xCoord] % 2 == 0) {
-								targetHex = hexSearchEven[j];
-								if (current+targetHex > 0 && current+targetHex < area) {
-									if (moose[current+targetHex,elevation] < lowest) { 
-										lowest = moose[current+targetHex,elevation];
-										target = moose[current+targetHex,idNum];
-										direction = j;
-									}
-								}
-							}
-							else {
-								targetHex = hexSearchOdd[j];
-								if (current+targetHex > 0 && current+targetHex < area) {
-									if (moose[current+targetHex,elevation] < lowest) { 
-										lowest = moose[current+targetHex,elevation];
-										target = moose[current+targetHex,idNum];
-										direction = j;
-									}
-								}
-							}
-						}
-						if (direction == -1) {
-							moose[current, riverType] = 9;
-							running = false;
+							moose[riverSpawner[i],riverType] = 9;
 							break;
 						}
-						if (moose[target,riverType] > 1) {
-							if (moose[target,riverType] == 5 || moose[target,riverType] == 6 || moose[target,riverType] == 7) {
-								moose[target,riverType] = 8;
-							}
-							if (moose[target,riverType] == 2) {
-								if (moose[target,riverDirection] == direction + 1 || moose[target,riverDirection] == direction - 5) {
-									moose[target,riverType] = 6;
-								}
-								if (moose[target,riverDirection] == direction - 1 || moose[target,riverDirection] == direction + 5) {
-									moose[target,riverType] = 5;
-								}
-							}
-							if (moose[target,riverType] == 3) {
-								if (moose[target,riverDirection] == direction) {
-									moose[target,riverType] = 5;
-								}
-								if (moose[target,riverDirection] == direction - 1 || moose[target,riverDirection] == direction + 5) {
-									moose[target,riverType] = 7;
-								}
-							}
-							if (moose[target,riverType] == 4) {
-								if (moose[target,riverDirection] == direction) {
-									moose[target,riverType] = 6;
-								}
-								if (moose[target,riverDirection] == direction + 1 || moose[target,riverDirection] == direction - 5) {
-									moose[target,riverType] = 7;
-								}
-							}
-						}
-						if (direction == oldDirection + 1 || direction == oldDirection - 5) {
-							moose[current,riverType] = 3;
-							moose[current,riverDirection] = direction;
-						}
-						if (direction == oldDirection - 1 || direction == oldDirection + 5) {
-							moose[current,riverType] = 4;
-							moose[current,riverDirection] = direction;
-						}
-						if (direction == oldDirection) {
-							moose[current,riverType] = 2;
-							moose[current,riverDirection] = direction;
-						}
-						if (waterlevel > moose[target, elevation]) {
-							running = false;
-						}
 					}
 				}
+
 			}
+
+
+//			if (riverGen) {
+//				for (int i = 0; i < area; i++) {
+//					int lowest = riverStart[0,1];
+//					int lowestId = 0;
+//					for (int j = 0; j < riverCount; j++) {
+//						if (riverStart[j,1] < lowest) {
+//							lowestId = j;
+//							lowest = riverStart[j,1];
+//						}
+//					}
+//		
+//					if (moose[i,elevation] > riverStart[lowestId,1]) {
+//						bool notThere = true;
+//						for (int j = 0; j < 6; j++) {
+//							for (int k = 0; k < riverCount; k++) {
+//								if (moose[i,xCoord] % 2 == 0) {
+//									targetHex = hexSearchEven[j];
+//									if (i+targetHex > 0 && i+targetHex < area) {
+//										if (riverStart[k,0] == i+targetHex) { 
+//											notThere = false;
+//										}
+//									}
+//								}
+//								else {
+//									targetHex = hexSearchOdd[j];
+//									if (i+targetHex > 0 && i+targetHex < area) {
+//										if (riverStart[k,0] == i+targetHex) { 
+//											notThere = false;
+//										}
+//									}
+//								}
+//							}
+//						}
+//						if (notThere) {
+//							riverStart[lowestId, 0] = i;
+//							riverStart[lowestId, 1] = moose[i,elevation];
+//						}
+//					}
+//				}
+//
+//				for (int i = 0; i < riverCount; i++) {
+//					int direction = 0;
+//					int lowest = riverStart[i,1];
+//					int target = riverStart[i,0];
+//					int current = riverStart[i,0];
+//					moose[current,riverType] = 1;
+//					for (int j = 0; j < 6; j++) {
+//						if (moose[target,xCoord] % 2 == 0) {
+//							targetHex = hexSearchEven[j];
+//							if (target+targetHex > 0 && target+targetHex < area) {
+//								if (moose[target+targetHex,3] < lowest) { 
+//									lowest = moose[target+targetHex,elevation];
+//									target = moose[target+targetHex,idNum];
+//									direction = j;
+//								}
+//							}
+//						}
+//						else {
+//							targetHex = hexSearchOdd[j];
+//							if (target+targetHex > 0 && target+targetHex < area) {
+//								if (moose[target+targetHex,3] < lowest) { 
+//									lowest = moose[target+targetHex,elevation];
+//									target = moose[target+targetHex,idNum];
+//									direction = j;
+//								}
+//							}
+//						}
+//					}
+//					moose[current,riverDirection] = direction;
+//				}
+//
+//				for (int i = 0; i < riverCount; i++) {
+//					bool running = true;
+//					int countise = 0;
+//					int direction = 0;
+//					int oldDirection = 0;
+//					int lowest = riverStart[i,1];
+//					int target = riverStart[i,0];
+//					while (running) {
+//						int current = target;
+//						oldDirection = direction;
+//						direction = -1;
+//						for (int j = 0; j < 6; j++) {
+//							if (moose[current,xCoord] % 2 == 0) {
+//								targetHex = hexSearchEven[j];
+//								if (current+targetHex > 0 && current+targetHex < area) {
+//									if (moose[current+targetHex,elevation] < lowest) { 
+//										lowest = moose[current+targetHex,elevation];
+//										target = moose[current+targetHex,idNum];
+//										direction = j;
+//									}
+//								}
+//							}
+//							else {
+//								targetHex = hexSearchOdd[j];
+//								if (current+targetHex > 0 && current+targetHex < area) {
+//									if (moose[current+targetHex,elevation] < lowest) { 
+//										lowest = moose[current+targetHex,elevation];
+//										target = moose[current+targetHex,idNum];
+//										direction = j;
+//									}
+//								}
+//							}
+//						}
+//						if (direction == -1) {
+//							moose[current, riverType] = 9;
+//							running = false;
+//							break;
+//						}
+//						if (moose[target,riverType] > 1) {
+//							if (moose[target,riverType] == 5 || moose[target,riverType] == 6 || moose[target,riverType] == 7) {
+//								moose[target,riverType] = 8;
+//							}
+//							if (moose[target,riverType] == 2) {
+//								if (moose[target,riverDirection] == direction + 1 || moose[target,riverDirection] == direction - 5) {
+//									moose[target,riverType] = 6;
+//								}
+//								if (moose[target,riverDirection] == direction - 1 || moose[target,riverDirection] == direction + 5) {
+//									moose[target,riverType] = 5;
+//								}
+//							}
+//							if (moose[target,riverType] == 3) {
+//								if (moose[target,riverDirection] == direction) {
+//									moose[target,riverType] = 5;
+//								}
+//								if (moose[target,riverDirection] == direction - 1 || moose[target,riverDirection] == direction + 5) {
+//									moose[target,riverType] = 7;
+//								}
+//							}
+//							if (moose[target,riverType] == 4) {
+//								if (moose[target,riverDirection] == direction) {
+//									moose[target,riverType] = 6;
+//								}
+//								if (moose[target,riverDirection] == direction + 1 || moose[target,riverDirection] == direction - 5) {
+//									moose[target,riverType] = 7;
+//								}
+//							}
+//						}
+//						if (direction == oldDirection + 1 || direction == oldDirection - 5) {
+//							moose[target,riverType] = 3;
+//							moose[target,riverDirection] = direction;
+//						}
+//						if (direction == oldDirection - 1 || direction == oldDirection + 5) {
+//							moose[target,riverType] = 4;
+//							moose[target,riverDirection] = direction;
+//						}
+//						if (direction == oldDirection) {
+//							moose[target,riverType] = 2;
+//							moose[target,riverDirection] = direction;
+//						}
+//						if (waterlevel > moose[target, elevation]) {
+//							running = false;
+//						}
+//					}
+//				}
+//			}
 
 			if (catGen) {
 				for (int i = 0; i < area; i++) {
-					if (moose[i,riverType] == 9) {
-						int roller = Random.Range (0, 20);
-						if (roller < 4 && moose[i,yCoord] < sizeY * 13 / 16 && moose[i,yCoord] > sizeY * 3 / 16) { //marsh
-							moose[i, category] = 5;
-							moose[i, fertilityValue] -= 40;
-						}
-					}
-					if (moose[i,riverType] > 0) {
-						moose[i, fertilityValue] += 20;
-					}
 					if (moose[i,yCoord] > sizeY * 15 / 16 || moose[i,yCoord] < sizeY / 16) { //icecaps
 						if (moose[i,elevation] < 40) {
 							moose[i,elevation] = 40;
@@ -578,23 +750,36 @@ public class GCScript : MonoBehaviour {
 							moose[i,category] = 1;
 						}
 					}
-					if (3 > Random.Range (0,100) && moose[i,terrainType] % 2 == 1) { //wasteland
-						moose[i,category] = 6;
-						moose[i,fertilityValue] -= 40;
-					}
-					if (moose[i,fertilityValue] > 40 && moose[i,terrainType] == 3 && moose[i,category] == 0) {
-						if (moose[i,yCoord] > sizeY * 6 / 16 && moose[i,yCoord] < sizeY * 10 / 16) {
-							moose[i,category] = 3;
-							moose[i,fertilityValue] += 20;
+					if (moose[i,waterType] == 0) { // land only
+						if (moose[i,riverType] == 9) {
+							int roller = Random.Range (0, 20);
+							if (roller < 4 && moose[i,yCoord] < sizeY * 13 / 16 && moose[i,yCoord] > sizeY * 3 / 16) { //marsh
+								moose[i, category] = 5;
+								moose[i, fertilityValue] -= 40;
+							}
 						}
-						else {
-							moose[i,category] = 2;
+						if (moose[i,riverType] > 0) {
+							moose[i, fertilityValue] += 20;
+						}
+
+						if (3 > Random.Range (0,100) && moose[i,terrainType] % 2 == 1) { //wasteland
+							moose[i,category] = 6;
+							moose[i,fertilityValue] -= 40;
+						}
+						if (moose[i,fertilityValue] > 40 && moose[i,terrainType] == 3 && moose[i,category] == 0) {
+							if (moose[i,yCoord] > sizeY * 6 / 16 && moose[i,yCoord] < sizeY * 10 / 16) {
+								moose[i,category] = 3;
+								moose[i,fertilityValue] += 20;
+							}
+							else {
+								moose[i,category] = 2;
+								moose[i,fertilityValue] += 10;
+							}
+						}
+						if (moose[i,fertilityValue] > 20 && moose[i,terrainType] == 1 && moose[i,category] == 0) {
+							moose[i,category] = 4;
 							moose[i,fertilityValue] += 10;
 						}
-					}
-					if (moose[i,fertilityValue] > 20 && moose[i,terrainType] == 1 && moose[i,category] == 0) {
-						moose[i,category] = 4;
-						moose[i,fertilityValue] += 10;
 					}
 				}
 			}				
@@ -685,7 +870,7 @@ public class GCScript : MonoBehaviour {
 						float add = 0f;
 						if (moose[i,xCoord] % 2 == 1) { add += 0.57f; }
 						Transform hex = Instantiate(tallHex, new Vector3(aox, aoy*1.15f - add, moose[i,elevation]*heightIncrement), Quaternion.identity) as Transform;
-						if (moose[i,waterType] > 0) {
+						if (moose[i,waterType] > 0 && moose[i,terrainType] != 6) {
 							hex.transform.position = new Vector3(hex.transform.position.x, hex.transform.position.y, waterlevel * heightIncrement);
 							if (moose[i,waterType] == 2) {
 								hex.renderer.material = terrainTypes[7];
@@ -702,7 +887,15 @@ public class GCScript : MonoBehaviour {
 							riverHex.renderer.material = riverTypes[moose[i,riverType]];
 							riverHex.transform.parent = hex;
 							riverHex.transform.Rotate (0,0,-120 + 60*moose[i,riverDirection]);
+							riverHex.localScale = new Vector3(1f,1.1f,1f);
 						}
+						if (moose[i, category] > 1) {
+							Transform catHex = Instantiate(categoryPrefab, new Vector3(aox, aoy*1.15f - add, moose[i,elevation]*heightIncrement + 3.45f), Quaternion.identity) as Transform;
+							catHex.renderer.material = catTypes[moose[i,category]-2];
+							catHex.transform.parent = hex;
+							catHex.transform.Rotate (0,0,Random.Range(0, 360));
+							catHex.localScale = new Vector3(1f,1.1f,1f);
+						} 
 						hex.transform.Rotate(0,0,30);
 						allObjects.Add (hex);
 						hex.gameObject.AddComponent<HexData>();
@@ -712,11 +905,12 @@ public class GCScript : MonoBehaviour {
 				}
 			}
 			spawnGen = false;
+			Destroy (ready.gameObject);
 		}
 		if (Input.GetAxis ("Horizontal") != 0 || Input.GetAxis ("Vertical") != 0) {
 			movementTicker += Time.deltaTime;
-		}
-		if (movementTicker > 0.2f) {
+//		}
+//		if (movementTicker > 0.1f) {
 			Material[] terrainTypes = {saltSea, aridTile, desertTile, grassTile, rockyTile, tundraTile, iceWall, seaDefault};
 			Material[] riverTypes = {null, riverSpawn, riverStraight, riverBendLeft, riverBendRight, riverMergeLeft, riverMergeRight, riverMergeSides, riverMergeAll, riverPond};
 			Material[] catTypes = {forestMaterial, jungleMaterial, savannahMaterial, marshMaterial, wastelandMaterial};
@@ -751,7 +945,7 @@ public class GCScript : MonoBehaviour {
 						float add = 0f;
 						if (moose[i,1] % 2 == 1) { add += 0.57f; }
 						Transform hex = Instantiate(tallHex, new Vector3(aox, aoy*1.15f - add, moose[i,elevation]*heightIncrement), Quaternion.identity) as Transform;
-						if (moose[i,waterType] > 0) {
+						if (moose[i,waterType] > 0 && moose[i,terrainType] != 6) {
 							hex.transform.position = new Vector3(hex.transform.position.x, hex.transform.position.y, waterlevel * heightIncrement);
 							if (moose[i,waterType] == 2) {
 								hex.renderer.material = terrainTypes[7];
@@ -768,7 +962,15 @@ public class GCScript : MonoBehaviour {
 							riverHex.renderer.material = riverTypes[moose[i,riverType]];
 							riverHex.transform.parent = hex;
 							riverHex.transform.Rotate (0,0,-120 + 60*moose[i,riverDirection]);
+							riverHex.localScale = new Vector3(1f,1.1f,1f);
 						}
+						if (moose[i, category] > 1) {
+							Transform catHex = Instantiate(categoryPrefab, new Vector3(aox, aoy*1.15f - add, moose[i,elevation]*heightIncrement + 3.45f), Quaternion.identity) as Transform;
+							catHex.renderer.material = catTypes[moose[i,category]-2];
+							catHex.transform.parent = hex;
+							catHex.transform.Rotate (0,0,Random.Range(0, 360));
+							catHex.localScale = new Vector3(1f,1.1f,1f);
+						} 
 						hex.transform.Rotate(0,0,30);
 						allObjects.Add (hex);
 						hex.gameObject.AddComponent<HexData>();
