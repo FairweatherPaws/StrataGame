@@ -477,7 +477,7 @@ public class GCScript : MonoBehaviour {
 						}
 						// x = 6: river type: 0: no river, 1: start 2: straight river, 3: bendLeft, 4: bendRight, 
 						// 5: bendLeft+straight, 6: bendRight+straight, 7: bendLeft+bendRight, 8: triple, 9: end pond;
-						if (direction > -1) {
+						if (direction > -1 && moose[riverSpawner[i],waterType] == 0) {
 							moose[riverSpawner[i],riverDirection] = direction;
 							if (moose[riverSpawner[i],xCoord] % 2 == 0) {
 								if (moose[riverSpawner[i],riverType] != 1) {
@@ -576,6 +576,9 @@ public class GCScript : MonoBehaviour {
 						}
 						else {
 							moose[riverSpawner[i],riverType] = 9;
+							if (moose[riverSpawner[i],waterType] != 0) {
+								moose[riverSpawner[i],riverType] = 0;
+							}
 							break;
 						}
 					}
